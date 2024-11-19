@@ -26,8 +26,21 @@ async def jsongen(url):
     except httpx.HTTPError as e:
         raise HTTPException(status_code=500, detail=f"Error fetching data: {e}")
 
+# Middleware to add custom fields globally
+@app.middleware("http")
+async def add_custom_fields(request: Request, call_next):
+    response = await call_next(request)
+    if response.status_code == 200 and isinstance(response, JSONResponse):
+        response_data = response.body.decode("utf-8")
+        modified_data = {
+            "creator": "EYEPATCH",
+            **response.json(),
+        }
+        return JSONResponse(modified_data)
+    return response
+
 # Route to fetch trending videos
-@app.get("/trending/{time}")
+@app.get("/trending/{time}/{page}")
 async def get_trending(time: str, page: Optional[int] = 0):
     trending_url = f"https://hanime.tv/api/v8/browse-trending?time={time}&page={page}&order_by=views&ordering=desc"
     urldata = await jsongen(trending_url)
@@ -103,7 +116,7 @@ async def get_tags():
     return {"results": jsondata}
 
 # Route to fetch browse videos
-@app.get("/{type}/{category}")
+@app.get("/{type}/{category}/{page}")
 async def get_browse_videos(type: str, category: str, page: Optional[int] = 0):
     browse_url = f"https://hanime.tv/api/v8/browse/{type}/{category}?page={page}&order_by=views&ordering=desc"
     browsedata = await jsongen(browse_url)
