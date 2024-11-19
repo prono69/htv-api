@@ -1,10 +1,8 @@
 from typing import Optional
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException
 import httpx
 import random
 import string
-import json
 
 app = FastAPI()
 
@@ -27,31 +25,8 @@ async def jsongen(url):
     except httpx.HTTPError as e:
         raise HTTPException(status_code=500, detail=f"Error fetching data: {e}")
 
-# Middleware to add custom fields globally
-@app.middleware("http")
-async def add_custom_fields(request: Request, call_next):
-    response = await call_next(request)
-
-    # Check if the response is JSON and has a body
-    if response.status_code == 200 and isinstance(response, JSONResponse):
-        original_body = await response.body()
-        try:
-            response_data = json.loads(original_body.decode("utf-8"))
-        except Exception:
-            return response  # If the body is not JSON, return the original response
-
-        # Add custom fields to the response
-        modified_data = {
-            "creator": "my name",
-            "api_version": "1.0",
-            **response_data,
-        }
-        return JSONResponse(modified_data)
-
-    return response
-
 # Route to fetch trending videos
-@app.get("/trending/{time}/{page}")
+@app.get("/trending/{time}")
 async def get_trending(time: str, page: Optional[int] = 0):
     trending_url = f"https://hanime.tv/api/v8/browse-trending?time={time}&page={page}&order_by=views&ordering=desc"
     urldata = await jsongen(trending_url)
@@ -66,8 +41,13 @@ async def get_trending(time: str, page: Optional[int] = 0):
         }
         for x in urldata["hentai_videos"]
     ]
-    next_page = f"/trending/{time}/{page + 1}"
-    return {"results": jsondata, "next_page": next_page}
+    next_page = f"/trending/{time}?{page + 1}"
+    return {
+        "creator": "EYEPATCH",
+        "api_version": "1.0",
+        "results": jsondata,
+        "next_page": next_page,
+    }
 
 # Route to fetch video details
 @app.get("/watch/{slug}")
@@ -104,7 +84,11 @@ async def get_video(slug: str):
         "tags": tags,
         "episodes": episodes,
     }
-    return {"results": [jsondata]}
+    return {
+        "creator": "EYEPATCH",
+        "api_version": "1.0",
+        "results": [jsondata],
+    }
 
 # Route to fetch browse data
 @app.get("/browse/{type}")
@@ -116,7 +100,11 @@ async def get_browse(type: str):
         jsondata = [{"name": x["text"], "url": f"/hentai-tags/{x['text']}/0"} for x in jsondata]
     elif type == "brands":
         jsondata = [{"name": x["name"], "url": f"/brands/{x['slug']}/0"} for x in jsondata]
-    return {"results": jsondata}
+    return {
+        "creator": "EYEPATCH",
+        "api_version": "1.0",
+        "results": jsondata,
+    }
 
 # Route to fetch tags
 @app.get("/tags")
@@ -124,10 +112,14 @@ async def get_tags():
     browse_url = "https://hanime.tv/api/v8/browse"
     data = await jsongen(browse_url)
     jsondata = [{"name": x["text"], "url": f"/tags/{x['text']}/0"} for x in data["hentai_tags"]]
-    return {"results": jsondata}
+    return {
+        "creator": "EYEPATCH",
+        "api_version": "1.0",
+        "results": jsondata,
+    }
 
 # Route to fetch browse videos
-@app.get("/{type}/{category}/{page}")
+@app.get("/{type}/{category}")
 async def get_browse_videos(type: str, category: str, page: Optional[int] = 0):
     browse_url = f"https://hanime.tv/api/v8/browse/{type}/{category}?page={page}&order_by=views&ordering=desc"
     browsedata = await jsongen(browse_url)
@@ -142,19 +134,33 @@ async def get_browse_videos(type: str, category: str, page: Optional[int] = 0):
         }
         for x in browsedata["hentai_videos"]
     ]
-    next_page = f"/{type}/{category}/{page + 1}"
-    return {"results": jsondata, "next_page": next_page}
+    next_page = f"/{type}/{category}?{page + 1}"
+    return {
+        "creator": "EYEPATCH",
+        "api_version": "1.0",
+        "results": jsondata,
+        "next_page": next_page,
+    }
 
 # Root route
 @app.get("/")
 async def root():
-    return {"message": "Welcome to Hanime API 👀"}
+    return {
+        "creator": "EYEPATCH",
+        "api_version": "1.0",
+        "message": "Welcome to Hanime API 👀",
+    }
 
 # Custom error handler
 @app.exception_handler(Exception)
-async def custom_exception_handler(request: Request, exc: Exception):
+async def custom_exception_handler(request, exc):
     return JSONResponse(
         status_code=500,
-        content={"error": "Something went wrong", "details": str(exc)},
+        content={
+            "creator": "EYEPATCH",
+            "api_version": "1.0",
+            "error": "Something went wrong",
+            "details": str(exc),
+        },
     )
     
