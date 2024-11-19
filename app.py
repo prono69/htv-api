@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 import httpx
 import random
 import string
+import json
 
 app = FastAPI()
 
@@ -30,13 +31,23 @@ async def jsongen(url):
 @app.middleware("http")
 async def add_custom_fields(request: Request, call_next):
     response = await call_next(request)
+
+    # Check if the response is JSON and has a body
     if response.status_code == 200 and isinstance(response, JSONResponse):
-        response_data = response.body.decode("utf-8")
+        original_body = await response.body()
+        try:
+            response_data = json.loads(original_body.decode("utf-8"))
+        except Exception:
+            return response  # If the body is not JSON, return the original response
+
+        # Add custom fields to the response
         modified_data = {
-            "creator": "EYEPATCH",
-            **response.json(),
+            "creator": "my name",
+            "api_version": "1.0",
+            **response_data,
         }
         return JSONResponse(modified_data)
+
     return response
 
 # Route to fetch trending videos
