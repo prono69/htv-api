@@ -44,7 +44,7 @@ async def get_trending(time: str, page: Optional[int] = 0):
     next_page = f"/trending/{time}?{page + 1}"
     return {
         "creator": "EYEPATCH",
-        "api_version": "1.0",
+        "api_version": "1.2",
         "results": jsondata,
         "next_page": next_page,
     }
@@ -86,7 +86,7 @@ async def get_video(slug: str):
     }
     return {
         "creator": "EYEPATCH",
-        "api_version": "1.0",
+        "api_version": "1.2",
         "results": [jsondata],
     }
 
@@ -102,7 +102,7 @@ async def get_browse(type: str):
         jsondata = [{"name": x["name"], "url": f"/brands/{x['slug']}/0"} for x in jsondata]
     return {
         "creator": "EYEPATCH",
-        "api_version": "1.0",
+        "api_version": "1.2",
         "results": jsondata,
     }
 
@@ -114,7 +114,7 @@ async def get_tags():
     jsondata = [{"name": x["text"], "url": f"/tags/{x['text']}/0"} for x in data["hentai_tags"]]
     return {
         "creator": "EYEPATCH",
-        "api_version": "1.0",
+        "api_version": "1.2",
         "results": jsondata,
     }
 
@@ -137,7 +137,7 @@ async def get_browse_videos(type: str, category: str, page: Optional[int] = 0):
     next_page = f"/{type}/{category}?{page + 1}"
     return {
         "creator": "EYEPATCH",
-        "api_version": "1.0",
+        "api_version": "1.2",
         "results": jsondata,
         "next_page": next_page,
     }
@@ -147,7 +147,7 @@ async def get_browse_videos(type: str, category: str, page: Optional[int] = 0):
 async def root():
     return {
         "creator": "EYEPATCH",
-        "api_version": "1.0",
+        "api_version": "1.2",
         "message": "Welcome to Hanime API 👀",
     }
 
@@ -158,7 +158,7 @@ async def custom_exception_handler(request, exc):
         status_code=500,
         content={
             "creator": "EYEPATCH",
-            "api_version": "1.0",
+            "api_version": "1.2",
             "error": "Something went wrong",
             "details": str(exc),
         },
