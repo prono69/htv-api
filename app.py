@@ -31,7 +31,8 @@ async def get_trending(
     time: str,
     page: Optional[int] = 0,
     order_by: Optional[str] = None,
-    ordering: Optional[str] = None
+    ordering: Optional[str] = None,
+    limit: Optional[int] = None  # New optional limit parameter
 ):
     # Base URL without optional params
     trending_url = f"https://hanime.tv/api/v8/browse-trending?time={time}&page={page}"
@@ -43,16 +44,23 @@ async def get_trending(
         trending_url += f"&ordering={ordering}"
     
     urldata = await jsongen(trending_url)
+    
+    # Get all results or apply limit if specified
+    hentai_videos = urldata["hentai_videos"]
+    if limit is not None:
+        hentai_videos = hentai_videos[:limit]
+    
     jsondata = [
         {
             "id": x["id"],
             "name": x["name"],
             "slug": x["slug"],
+            "monthly_rank": x["monthly_rank"],
             "cover_url": x["cover_url"],
             "views": x["views"],
             "link": f"/watch/{x['slug']}",
         }
-        for x in urldata["hentai_videos"]
+        for x in hentai_videos
     ]
     
     # Build next_page URL with all current parameters
@@ -61,6 +69,8 @@ async def get_trending(
         next_page_params += f"&order_by={order_by}"
     if ordering:
         next_page_params += f"&ordering={ordering}"
+    if limit:
+        next_page_params += f"&limit={limit}"
     
     next_page = f"/trending/{time}?{next_page_params}"
     
