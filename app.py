@@ -27,8 +27,21 @@ async def jsongen(url):
 
 # Route to fetch trending videos
 @app.get("/trending/{time}")
-async def get_trending(time: str, page: Optional[int] = 0):
-    trending_url = f"https://hanime.tv/api/v8/browse-trending?time={time}&page={page}&order_by=views&ordering=desc"
+async def get_trending(
+    time: str,
+    page: Optional[int] = 0,
+    order_by: Optional[str] = None,
+    ordering: Optional[str] = None
+):
+    # Base URL without optional params
+    trending_url = f"https://hanime.tv/api/v8/browse-trending?time={time}&page={page}"
+    
+    # Add optional params if they are provided
+    if order_by:
+        trending_url += f"&order_by={order_by}"
+    if ordering:
+        trending_url += f"&ordering={ordering}"
+    
     urldata = await jsongen(trending_url)
     jsondata = [
         {
@@ -41,7 +54,16 @@ async def get_trending(time: str, page: Optional[int] = 0):
         }
         for x in urldata["hentai_videos"]
     ]
-    next_page = f"/trending/{time}?{page + 1}"
+    
+    # Build next_page URL with all current parameters
+    next_page_params = f"page={page + 1}"
+    if order_by:
+        next_page_params += f"&order_by={order_by}"
+    if ordering:
+        next_page_params += f"&ordering={ordering}"
+    
+    next_page = f"/trending/{time}?{next_page_params}"
+    
     return {
         "creator": "EYEPATCH",
         "api_version": "1.2",
